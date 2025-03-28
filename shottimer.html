@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airsoft Shot Timer</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #shot-list { margin-top: 20px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <h1>Airsoft Shot Timer</h1>
+    <button onclick="startTimer()">Start Timer</button>
+    <p id="status">Press "Start Timer" to begin</p>
+    <ul id="shot-list"></ul>
+
+    <script>
+        let audioContext, analyser, microphone, dataArray, startTime, shots = [];
+        let isListening = false;
+
+        function startTimer() {
+            document.getElementById('status').innerText = "Get Ready...";
+            shots = [];
+            document.getElementById("shot-list").innerHTML = "";
+
+            // Random start delay (1-5 seconds)
+            let randomDelay = Math.floor(Math.random() * 4000) + 1000;
+            
+            setTimeout(() => {
+                document.getElementById('status').innerText = "Listening for Shots...";
+                startListening();
+                startTime = performance.now();
+            }, randomDelay);
+        }
+
+        async function startListening() {
+            if (isListening) return;
+            isListening = true;
+
+            // Initialize audio context
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+
+            // Get microphone input
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 512;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                detectShots();
+            } catch (err) {
+                document.getElementById('status').innerText = "Microphone access denied!";
+            }
+        }
+
+        function detectShots() {
+            analyser.getByteFrequencyData(dataArray);
+            let volume = dataArray.reduce((a, b) => a + b) / dataArray.length; // Get average volume
+            
+            if (volume > 50) { // Adjust this threshold for sensitivity
+                let shotTime = ((performance.now() - startTime) / 1000).toFixed(2);
+                if (shots.length === 0 || shotTime - shots[shots.length - 1] > 0.1) { // Prevent duplicate readings
+                    shots.push(shotTime);
+                    document.getElementById("shot-list").innerHTML += `<li>Shot ${shots.length}: ${shotTime} seconds</li>`;
+                }
+            }
+            
+            requestAnimationFrame(detectShots);
+        }
+    </script>
+</body>
+</html>
