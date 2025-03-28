@@ -8,42 +8,53 @@
         body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
         button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; }
         #shot-list { margin-top: 20px; font-size: 18px; }
+        #sensitivity { margin: 10px; }
     </style>
 </head>
 <body>
     <h1>Airsoft Shot Timer</h1>
     <button onclick="startTimer()">Start Timer</button>
+    <button onclick="stopTimer()">Stop Timer</button>
+    <p>Sensitivity: <span id="sensitivity-value">50</span></p>
+    <input type="range" id="sensitivity" min="10" max="100" value="50" step="5" oninput="updateSensitivity()">
     <p id="status">Press "Start Timer" to begin</p>
     <ul id="shot-list"></ul>
 
     <script>
         let audioContext, analyser, microphone, dataArray, startTime, shots = [];
         let isListening = false;
+        let sensitivity = 50;
 
         function startTimer() {
             document.getElementById('status').innerText = "Get Ready...";
             shots = [];
             document.getElementById("shot-list").innerHTML = "";
 
-            // Random start delay (1-5 seconds)
             let randomDelay = Math.floor(Math.random() * 4000) + 1000;
             
             setTimeout(() => {
+                playBeep();
                 document.getElementById('status').innerText = "Listening for Shots...";
                 startListening();
                 startTime = performance.now();
             }, randomDelay);
         }
 
+        function stopTimer() {
+            isListening = false;
+            document.getElementById('status').innerText = "Timer Stopped";
+            if (audioContext) {
+                audioContext.close();
+            }
+        }
+
         async function startListening() {
             if (isListening) return;
             isListening = true;
 
-            // Initialize audio context
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
 
-            // Get microphone input
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 microphone = audioContext.createMediaStreamSource(stream);
@@ -57,18 +68,30 @@
         }
 
         function detectShots() {
+            if (!isListening) return;
+
             analyser.getByteFrequencyData(dataArray);
-            let volume = dataArray.reduce((a, b) => a + b) / dataArray.length; // Get average volume
-            
-            if (volume > 50) { // Adjust this threshold for sensitivity
+            let volume = dataArray.reduce((a, b) => a + b) / dataArray.length; 
+
+            if (volume > sensitivity) { 
                 let shotTime = ((performance.now() - startTime) / 1000).toFixed(2);
-                if (shots.length === 0 || shotTime - shots[shots.length - 1] > 0.1) { // Prevent duplicate readings
+                if (shots.length === 0 || shotTime - shots[shots.length - 1] > 0.1) {
                     shots.push(shotTime);
                     document.getElementById("shot-list").innerHTML += `<li>Shot ${shots.length}: ${shotTime} seconds</li>`;
                 }
             }
             
             requestAnimationFrame(detectShots);
+        }
+
+        function updateSensitivity() {
+            sensitivity = document.getElementById("sensitivity").value;
+            document.getElementById("sensitivity-value").innerText = sensitivity;
+        }
+
+        function playBeep() {
+            let beep = new Audio("https://www.soundjay.com/button/beep-07.wav");
+            beep.play();
         }
     </script>
 </body>
