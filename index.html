@@ -5,44 +5,194 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airsoft Shot Timer</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; }
-        #shot-list { margin-top: 20px; font-size: 18px; }
-        #sensitivity { margin: 10px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin: 20px; 
+            background-color: black;
+            color: white;
+            transition: background-color 0.5s;
+        }
+        button { 
+            font-size: 18px; 
+            padding: 10px 20px; 
+            margin: 10px; 
+            cursor: pointer; 
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        #shot-list { 
+            margin-top: 20px; 
+            font-size: 18px; 
+            list-style-type: none;
+            padding: 0;
+        }
+        #sensitivity, #delay, #autoStop { 
+            margin: 10px; 
+            width: 200px;
+        }
+        #status {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .setting {
+            margin: 15px 0;
+        }
+        .mode-selector {
+            margin: 20px 0;
+        }
+        .mode-btn {
+            background-color: #444;
+        }
+        .mode-btn.active {
+            background-color: #0066ff;
+            font-weight: bold;
+        }
+        .control-buttons {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>Airsoft Shot Timer</h1>
-    <button onclick="startTimer()">Start Timer</button>
-    <button onclick="stopTimer()">Stop Timer</button>
-    <p>Sensitivity: <span id="sensitivity-value">50</span></p>
-    <input type="range" id="sensitivity" min="10" max="100" value="50" step="5" oninput="updateSensitivity()">
+
+    <div class="control-buttons">
+        <button onclick="startTimer()">Start Timer</button>
+        <button onclick="stopTimer()">Stop Timer</button>
+        <button onclick="resetTimer()">Reset Timer</button>
+    </div>
+
+    <div class="mode-selector">
+        <button id="mode-standard" class="mode-btn active" onclick="setMode('standard')">Standard Mode</button>
+        <button id="mode-single" class="mode-btn" onclick="setMode('single')">Single Shot Mode</button>
+    </div>
+
+    <div class="setting">
+        <p>Sensitivity: <span id="sensitivity-value">50</span></p>
+        <input type="range" id="sensitivity" min="10" max="100" value="50" step="5" oninput="updateSensitivity()">
+    </div>
+
+    <div class="setting">
+        <p>Start Delay: <span id="delay-value">3</span> seconds</p>
+        <input type="range" id="delay" min="1" max="5" value="3" step="1" oninput="updateDelay()">
+    </div>
+
+    <div class="setting">
+        <p>Auto Stop After: <span id="autoStop-value">0</span> seconds (0 = disabled)</p>
+        <input type="range" id="autoStop" min="0" max="10" value="0" step="1" oninput="updateAutoStop()">
+    </div>
+
     <p id="status">Press "Start Timer" to begin</p>
     <ul id="shot-list"></ul>
 
     <script>
+        // Audio elements
+        const beepSound = new Audio("https://raw.githubusercontent.com/Thyxo/Airsoft/main/beep-shot-timer.mp3");
+        const buzzerSound = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
+        
+        // Timer variables
         let audioContext, analyser, microphone, dataArray, startTime, shots = [];
         let isListening = false;
+        let timerActive = false;
+        let autoStopTimeout;
+        
+        // Settings
         let sensitivity = 50;
+        let startDelay = 3;
+        let autoStopDuration = 0;
+        let currentMode = 'standard';
+        
+        // Sound detection variables
+        let lastVolume = 0;
+        let volumeHistory = [];
+        const HISTORY_SIZE = 5;
+        let shotLockout = false;
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-standard').classList.toggle('active', mode === 'standard');
+            document.getElementById('mode-single').classList.toggle('active', mode === 'single');
+            document.getElementById('status').innerText = `Mode set to ${mode === 'single' ? 'Single Shot' : 'Standard'}`;
+        }
 
         function startTimer() {
+            // Reset state
+            document.body.style.backgroundColor = "black";
             document.getElementById('status').innerText = "Get Ready...";
             shots = [];
             document.getElementById("shot-list").innerHTML = "";
+            timerActive = true;
+            shotLockout = false;
+            
+            // Clear previous timeouts
+            clearTimeout(autoStopTimeout);
+            
+            // Reset sound detection
+            lastVolume = 0;
+            volumeHistory = [];
 
-            let randomDelay = Math.floor(Math.random() * 4000) + 1000;
+            // Random start delay
+            let randomDelay = Math.floor(Math.random() * (startDelay * 1000));
             
             setTimeout(() => {
+                document.body.style.backgroundColor = "red";
                 playBeep();
-                document.getElementById('status').innerText = "Listening for Shots...";
+                document.getElementById('status').innerText = currentMode === 'single' 
+                    ? "Waiting for first shot..." 
+                    : "Listening for Shots...";
                 startListening();
                 startTime = performance.now();
+
+                // Set up auto-stop if enabled
+                if (autoStopDuration > 0 && currentMode === 'standard') {
+                    autoStopTimeout = setTimeout(() => {
+                        autoStopTimer();
+                    }, autoStopDuration * 1000);
+                }
             }, randomDelay);
         }
 
         function stopTimer() {
+            clearTimeout(autoStopTimeout);
             isListening = false;
+            timerActive = false;
             document.getElementById('status').innerText = "Timer Stopped";
+            document.body.style.backgroundColor = "black";
+            if (audioContext) {
+                audioContext.close();
+            }
+        }
+
+        function resetTimer() {
+            // Stop any ongoing timer
+            stopTimer();
+            
+            // Reset all displayed values
+            document.getElementById('status').innerText = "Press 'Start Timer' to begin";
+            document.getElementById("shot-list").innerHTML = "";
+            shots = [];
+            
+            // Reset background color
+            document.body.style.backgroundColor = "black";
+            
+            // Reset sound detection
+            lastVolume = 0;
+            volumeHistory = [];
+            shotLockout = false;
+        }
+
+        function autoStopTimer() {
+            isListening = false;
+            timerActive = false;
+            document.getElementById('status').innerText = "Time's Up!";
+            document.body.style.backgroundColor = "green";
+            playBuzzer();
             if (audioContext) {
                 audioContext.close();
             }
@@ -52,18 +202,20 @@
             if (isListening) return;
             isListening = true;
 
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-
             try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; // Higher resolution for better detection
+                
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 microphone = audioContext.createMediaStreamSource(stream);
                 microphone.connect(analyser);
-                analyser.fftSize = 512;
+                
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
                 detectShots();
             } catch (err) {
                 document.getElementById('status').innerText = "Microphone access denied!";
+                document.body.style.backgroundColor = "black";
             }
         }
 
@@ -71,17 +223,59 @@
             if (!isListening) return;
 
             analyser.getByteFrequencyData(dataArray);
-            let volume = dataArray.reduce((a, b) => a + b) / dataArray.length; 
-
-            if (volume > sensitivity) { 
-                let shotTime = ((performance.now() - startTime) / 1000).toFixed(2);
-                if (shots.length === 0 || shotTime - shots[shots.length - 1] > 0.1) {
-                    shots.push(shotTime);
-                    document.getElementById("shot-list").innerHTML += `<li>Shot ${shots.length}: ${shotTime} seconds</li>`;
+            
+            // Calculate current volume (RMS)
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i] * dataArray[i];
+            }
+            let rms = Math.sqrt(sum / dataArray.length);
+            
+            // Add to history
+            volumeHistory.push(rms);
+            if (volumeHistory.length > HISTORY_SIZE) {
+                volumeHistory.shift();
+            }
+            
+            // Calculate average of history
+            let avgVolume = volumeHistory.reduce((a, b) => a + b, 0) / volumeHistory.length;
+            
+            // Detect shot (using peak detection)
+            if (!shotLockout && rms > avgVolume * (1 + sensitivity/50) && rms > 20) {
+                registerShot(rms);
+                
+                // In single shot mode, stop after first shot
+                if (currentMode === 'single') {
+                    setTimeout(() => {
+                        stopTimer();
+                        document.body.style.backgroundColor = "green";
+                        document.getElementById('status').innerText = "Single Shot Detected!";
+                    }, 100);
                 }
             }
             
+            lastVolume = rms;
             requestAnimationFrame(detectShots);
+        }
+
+        function registerShot(volume) {
+            let shotTime = ((performance.now() - startTime) / 1000).toFixed(2);
+            shots.push(shotTime);
+            document.getElementById("shot-list").innerHTML += `<li>Shot ${shots.length}: ${shotTime} seconds (vol: ${volume.toFixed(1)})</li>`;
+            
+            // Flash white briefly when shot is detected
+            document.body.style.backgroundColor = "white";
+            setTimeout(() => {
+                if (timerActive) {
+                    document.body.style.backgroundColor = currentMode === 'single' ? "green" : "red";
+                }
+            }, 100);
+            
+            // Short lockout to prevent multiple detections
+            shotLockout = true;
+            setTimeout(() => {
+                shotLockout = false;
+            }, 200);
         }
 
         function updateSensitivity() {
@@ -89,20 +283,28 @@
             document.getElementById("sensitivity-value").innerText = sensitivity;
         }
 
+        function updateDelay() {
+            startDelay = document.getElementById("delay").value;
+            document.getElementById("delay-value").innerText = startDelay;
+        }
+
+        function updateAutoStop() {
+            autoStopDuration = document.getElementById("autoStop").value;
+            document.getElementById("autoStop-value").innerText = autoStopDuration;
+        }
+
         function playBeep() {
-            let ctx = new (window.AudioContext || window.webkitAudioContext)();
-            let oscillator = ctx.createOscillator();
-            let gain = ctx.createGain();
+            beepSound.currentTime = 0;
+            beepSound.play().then(() => {
+                if (timerActive) {
+                    document.body.style.backgroundColor = "green";
+                }
+            });
+        }
 
-            oscillator.type = "sine"; 
-            oscillator.frequency.setValueAtTime(1000, ctx.currentTime); // 1000 Hz beep
-            gain.gain.setValueAtTime(1, ctx.currentTime); // Full volume
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5); // Fade out
-
-            oscillator.connect(gain);
-            gain.connect(ctx.destination);
-            oscillator.start();
-            oscillator.stop(ctx.currentTime + 0.5); // Stop after 0.5 seconds
+        function playBuzzer() {
+            buzzerSound.currentTime = 0;
+            buzzerSound.play();
         }
     </script>
 </body>
