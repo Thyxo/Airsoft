@@ -5,91 +5,290 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airsoft Shot Timer</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            margin: 20px; 
-            background-color: black;
-            color: white;
-            transition: background-color 0.5s;
+        :root {
+            --primary: #2b5876;
+            --secondary: #4e4376;
+            --accent: #f5af19;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --success: #4BB543;
+            --danger: #ff4444;
         }
-        button { 
-            font-size: 18px; 
-            padding: 10px 20px; 
-            margin: 10px; 
-            cursor: pointer; 
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #555;
-        }
-        #shot-list { 
-            margin-top: 20px; 
-            font-size: 18px; 
-            list-style-type: none;
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
             padding: 0;
         }
-        #sensitivity, #delay, #autoStop { 
-            margin: 10px; 
-            width: 200px;
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        #status {
-            font-size: 20px;
-            font-weight: bold;
-            margin: 20px 0;
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 20px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 0 20px 20px 0;
+            transition: transform 0.3s ease;
+            z-index: 10;
         }
-        .setting {
-            margin: 15px 0;
+        
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .mode-selector {
-            margin: 20px 0;
+        
+        .sidebar-header h2 {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
         }
-        .mode-btn {
-            background-color: #444;
+        
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .mode-btn.active {
-            background-color: #0066ff;
-            font-weight: bold;
+        
+        .timer-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .control-buttons {
+        
+        h1 {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(245, 175, 25, 0.3);
             margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-align: center;
+        }
+        
+        /* Button Styles */
+        button {
+            font-size: 1rem;
+            padding: 12px 25px;
+            margin: 8px;
+            cursor: pointer;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to right, var(--secondary), var(--primary));
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+        
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .mode-btn.active {
+            background: var(--accent);
+            color: var(--dark);
+            box-shadow: 0 0 15px rgba(245, 175, 25, 0.5);
+        }
+        
+        /* Status Display */
+        #status {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 25px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Shot List */
+        #shot-list {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            list-style-type: none;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        #shot-list li {
+            padding: 10px 15px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        #shot-list li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Settings Styles */
+        .setting {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+        
+        .setting p {
+            margin-bottom: 10px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .value-display {
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 0 0 8px rgba(245, 175, 25, 0.5);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-radius: 0;
+                padding: 15px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .mode-selector {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Airsoft Shot Timer</h1>
+    <!-- Settings Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Timer Settings</h2>
+        </div>
+        
+        <div class="setting">
+            <p>Sensitivity: <span id="sensitivity-value" class="value-display">50</span></p>
+            <input type="range" id="sensitivity" min="10" max="100" value="50" step="5" oninput="updateSensitivity()">
+        </div>
 
-    <div class="control-buttons">
-        <button onclick="startTimer()">Start Timer</button>
-        <button onclick="stopTimer()">Stop Timer</button>
-        <button onclick="resetTimer()">Reset Timer</button>
+        <div class="setting">
+            <p>Start Delay: <span id="delay-value" class="value-display">3</span> seconds</p>
+            <input type="range" id="delay" min="1" max="5" value="3" step="1" oninput="updateDelay()">
+        </div>
+
+        <div class="setting">
+            <p>Auto Stop After: <span id="autoStop-value" class="value-display">0</span> seconds</p>
+            <p style="font-size: 0.9rem; opacity: 0.8;">(0 = disabled)</p>
+            <input type="range" id="autoStop" min="0" max="10" value="0" step="1" oninput="updateAutoStop()">
+        </div>
+        
+        <div class="mode-selector">
+            <button id="mode-standard" class="mode-btn active" onclick="setMode('standard')">Standard Mode</button>
+            <button id="mode-single" class="mode-btn" onclick="setMode('single')">Single Shot Mode</button>
+        </div>
     </div>
 
-    <div class="mode-selector">
-        <button id="mode-standard" class="mode-btn active" onclick="setMode('standard')">Standard Mode</button>
-        <button id="mode-single" class="mode-btn" onclick="setMode('single')">Single Shot Mode</button>
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1>Airsoft Shot Timer</h1>
+        
+        <div class="timer-container">
+            <div class="control-buttons">
+                <button onclick="startTimer()">Start Timer</button>
+                <button onclick="stopTimer()">Stop Timer</button>
+                <button onclick="resetTimer()">Reset Timer</button>
+            </div>
+            
+            <p id="status">Press "Start Timer" to begin</p>
+            
+            <ul id="shot-list"></ul>
+        </div>
     </div>
-
-    <div class="setting">
-        <p>Sensitivity: <span id="sensitivity-value">50</span></p>
-        <input type="range" id="sensitivity" min="10" max="100" value="50" step="5" oninput="updateSensitivity()">
-    </div>
-
-    <div class="setting">
-        <p>Start Delay: <span id="delay-value">3</span> seconds</p>
-        <input type="range" id="delay" min="1" max="5" value="3" step="1" oninput="updateDelay()">
-    </div>
-
-    <div class="setting">
-        <p>Auto Stop After: <span id="autoStop-value">0</span> seconds (0 = disabled)</p>
-        <input type="range" id="autoStop" min="0" max="10" value="0" step="1" oninput="updateAutoStop()">
-    </div>
-
-    <p id="status">Press "Start Timer" to begin</p>
-    <ul id="shot-list"></ul>
 
     <script>
         // Audio elements
@@ -123,7 +322,7 @@
 
         function startTimer() {
             // Reset state
-            document.body.style.backgroundColor = "black";
+            document.body.style.backgroundColor = "var(--dark)";
             document.getElementById('status').innerText = "Get Ready...";
             shots = [];
             document.getElementById("shot-list").innerHTML = "";
@@ -141,7 +340,7 @@
             let randomDelay = Math.floor(Math.random() * (startDelay * 1000));
             
             setTimeout(() => {
-                document.body.style.backgroundColor = "red";
+                document.body.style.backgroundColor = "var(--danger)";
                 playBeep();
                 document.getElementById('status').innerText = currentMode === 'single' 
                     ? "Waiting for first shot..." 
@@ -163,7 +362,7 @@
             isListening = false;
             timerActive = false;
             document.getElementById('status').innerText = "Timer Stopped";
-            document.body.style.backgroundColor = "black";
+            document.body.style.backgroundColor = "var(--dark)";
             if (audioContext) {
                 audioContext.close();
             }
@@ -179,7 +378,7 @@
             shots = [];
             
             // Reset background color
-            document.body.style.backgroundColor = "black";
+            document.body.style.backgroundColor = "var(--dark)";
             
             // Reset sound detection
             lastVolume = 0;
@@ -191,7 +390,7 @@
             isListening = false;
             timerActive = false;
             document.getElementById('status').innerText = "Time's Up!";
-            document.body.style.backgroundColor = "green";
+            document.body.style.backgroundColor = "var(--success)";
             playBuzzer();
             if (audioContext) {
                 audioContext.close();
@@ -215,7 +414,7 @@
                 detectShots();
             } catch (err) {
                 document.getElementById('status').innerText = "Microphone access denied!";
-                document.body.style.backgroundColor = "black";
+                document.body.style.backgroundColor = "var(--dark)";
             }
         }
 
@@ -248,7 +447,7 @@
                 if (currentMode === 'single') {
                     setTimeout(() => {
                         stopTimer();
-                        document.body.style.backgroundColor = "green";
+                        document.body.style.backgroundColor = "var(--success)";
                         document.getElementById('status').innerText = "Single Shot Detected!";
                     }, 100);
                 }
@@ -267,7 +466,7 @@
             document.body.style.backgroundColor = "white";
             setTimeout(() => {
                 if (timerActive) {
-                    document.body.style.backgroundColor = currentMode === 'single' ? "green" : "red";
+                    document.body.style.backgroundColor = currentMode === 'single' ? "var(--success)" : "var(--danger)";
                 }
             }, 100);
             
@@ -297,7 +496,7 @@
             beepSound.currentTime = 0;
             beepSound.play().then(() => {
                 if (timerActive) {
-                    document.body.style.backgroundColor = "green";
+                    document.body.style.backgroundColor = "var(--success)";
                 }
             });
         }
