@@ -13,6 +13,7 @@
             --light: #f8f9fa;
             --success: #4BB543;
             --danger: #ff4444;
+            --info: #17a2b8;
         }
         
         * {
@@ -123,6 +124,7 @@
             justify-content: center;
             margin: 20px 0;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
         .mode-btn {
@@ -158,7 +160,7 @@
             font-size: 1.1rem;
             list-style-type: none;
             width: 100%;
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
             padding: 10px;
             background: rgba(0, 0, 0, 0.2);
@@ -175,6 +177,38 @@
         
         #shot-list li:hover {
             background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Rate of Fire Display */
+        #rate-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            text-align: center;
+            color: var(--accent);
+            text-shadow: 0 0 8px rgba(245, 175, 25, 0.5);
+            display: none;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 15px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--accent), #f12711);
+            width: 0%;
+            transition: width 0.1s linear;
         }
         
         /* Settings Styles */
@@ -262,14 +296,14 @@
         </div>
 
         <div class="setting">
-            <p>Auto Stop After: <span id="autoStop-value" class="value-display">0</span> seconds</p>
-            <p style="font-size: 0.9rem; opacity: 0.8;">(0 = disabled)</p>
-            <input type="range" id="autoStop" min="0" max="10" value="0" step="1" oninput="updateAutoStop()">
+            <p>Measurement Duration: <span id="duration-value" class="value-display">3</span> seconds</p>
+            <input type="range" id="duration" min="1" max="5" value="3" step="0.5" oninput="updateDuration()">
         </div>
         
         <div class="mode-selector">
-            <button id="mode-standard" class="mode-btn active" onclick="setMode('standard')">Standard Mode</button>
-            <button id="mode-single" class="mode-btn" onclick="setMode('single')">Single Shot Mode</button>
+            <button id="mode-standard" class="mode-btn active" onclick="setMode('standard')">Standard</button>
+            <button id="mode-single" class="mode-btn" onclick="setMode('single')">Single Shot</button>
+            <button id="mode-rate" class="mode-btn" onclick="setMode('rate')">Rate-of-Fire</button>
         </div>
     </div>
 
@@ -286,6 +320,12 @@
             
             <p id="status">Press "Start Timer" to begin</p>
             
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            
+            <div id="rate-display"></div>
+            
             <ul id="shot-list"></ul>
         </div>
     </div>
@@ -300,11 +340,12 @@
         let isListening = false;
         let timerActive = false;
         let autoStopTimeout;
+        let progressInterval;
+        let measurementDuration = 3;
         
         // Settings
         let sensitivity = 50;
         let startDelay = 3;
-        let autoStopDuration = 0;
         let currentMode = 'standard';
         
         // Sound detection variables
@@ -317,13 +358,26 @@
             currentMode = mode;
             document.getElementById('mode-standard').classList.toggle('active', mode === 'standard');
             document.getElementById('mode-single').classList.toggle('active', mode === 'single');
-            document.getElementById('status').innerText = `Mode set to ${mode === 'single' ? 'Single Shot' : 'Standard'}`;
+            document.getElementById('mode-rate').classList.toggle('active', mode === 'rate');
+            document.getElementById('status').innerText = `Mode set to ${getModeName(mode)}`;
+            document.getElementById('rate-display').style.display = 'none';
+        }
+
+        function getModeName(mode) {
+            const names = {
+                'standard': 'Standard',
+                'single': 'Single Shot',
+                'rate': 'Rate-of-Fire'
+            };
+            return names[mode] || mode;
         }
 
         function startTimer() {
             // Reset state
             document.body.style.backgroundColor = "var(--dark)";
             document.getElementById('status').innerText = "Get Ready...";
+            document.getElementById('rate-display').style.display = 'none';
+            document.getElementById('rate-display').innerHTML = '';
             shots = [];
             document.getElementById("shot-list").innerHTML = "";
             timerActive = true;
@@ -331,6 +385,7 @@
             
             // Clear previous timeouts
             clearTimeout(autoStopTimeout);
+            clearInterval(progressInterval);
             
             // Reset sound detection
             lastVolume = 0;
@@ -340,29 +395,93 @@
             let randomDelay = Math.floor(Math.random() * (startDelay * 1000));
             
             setTimeout(() => {
-                document.body.style.backgroundColor = "var(--danger)";
+                const bgColor = currentMode === 'rate' ? "var(--info)" : "var(--danger)";
+                document.body.style.backgroundColor = bgColor;
                 playBeep();
-                document.getElementById('status').innerText = currentMode === 'single' 
-                    ? "Waiting for first shot..." 
-                    : "Listening for Shots...";
+                
+                let statusText = "";
+                switch(currentMode) {
+                    case 'single':
+                        statusText = "Waiting for first shot...";
+                        break;
+                    case 'rate':
+                        statusText = `Measuring rate-of-fire for ${measurementDuration}s...`;
+                        document.getElementById('progress-container').style.display = 'block';
+                        startProgressBar(measurementDuration);
+                        break;
+                    default:
+                        statusText = "Listening for Shots...";
+                }
+                document.getElementById('status').innerText = statusText;
+                
                 startListening();
                 startTime = performance.now();
 
                 // Set up auto-stop if enabled
-                if (autoStopDuration > 0 && currentMode === 'standard') {
+                if (currentMode === 'rate') {
                     autoStopTimeout = setTimeout(() => {
-                        autoStopTimer();
-                    }, autoStopDuration * 1000);
+                        calculateRateOfFire();
+                    }, measurementDuration * 1000);
+                } else if (currentMode === 'standard') {
+                    // Standard mode can use auto-stop if you want to add it back
                 }
             }, randomDelay);
         }
 
+        function startProgressBar(duration) {
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = '0%';
+            
+            const startTime = Date.now();
+            const endTime = startTime + (duration * 1000);
+            
+            progressInterval = setInterval(() => {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const progress = Math.min((elapsed / (duration * 1000)) * 100, 100);
+                progressBar.style.width = `${progress}%`;
+                
+                if (now >= endTime) {
+                    clearInterval(progressInterval);
+                }
+            }, 50);
+        }
+
+        function calculateRateOfFire() {
+            if (shots.length < 1) {
+                document.getElementById('rate-display').innerHTML = "No shots detected!";
+                document.getElementById('rate-display').style.display = 'block';
+                stopTimer();
+                return;
+            }
+            
+            // Calculate shots per second
+            const totalTime = measurementDuration;
+            const shotsPerSecond = (shots.length / totalTime).toFixed(2);
+            
+            // Display result
+            document.getElementById('rate-display').innerHTML = `
+                <div>Shots: ${shots.length}</div>
+                <div>Duration: ${measurementDuration}s</div>
+                <div style="font-size: 2rem; margin: 10px 0; color: var(--accent)">
+                    Rate: ${shotsPerSecond} SPS
+                </div>
+                <div>(${(shotsPerSecond * 60).toFixed(1)} RPM)</div>
+            `;
+            document.getElementById('rate-display').style.display = 'block';
+            
+            stopTimer();
+            document.body.style.backgroundColor = "var(--success)";
+            document.getElementById('status').innerText = "Measurement Complete!";
+            document.getElementById('progress-container').style.display = 'none';
+        }
+
         function stopTimer() {
             clearTimeout(autoStopTimeout);
+            clearInterval(progressInterval);
             isListening = false;
             timerActive = false;
-            document.getElementById('status').innerText = "Timer Stopped";
-            document.body.style.backgroundColor = "var(--dark)";
+            document.getElementById('progress-container').style.display = 'none';
             if (audioContext) {
                 audioContext.close();
             }
@@ -375,6 +494,8 @@
             // Reset all displayed values
             document.getElementById('status').innerText = "Press 'Start Timer' to begin";
             document.getElementById("shot-list").innerHTML = "";
+            document.getElementById('rate-display').style.display = 'none';
+            document.getElementById('rate-display').innerHTML = '';
             shots = [];
             
             // Reset background color
@@ -386,17 +507,6 @@
             shotLockout = false;
         }
 
-        function autoStopTimer() {
-            isListening = false;
-            timerActive = false;
-            document.getElementById('status').innerText = "Time's Up!";
-            document.body.style.backgroundColor = "var(--success)";
-            playBuzzer();
-            if (audioContext) {
-                audioContext.close();
-            }
-        }
-
         async function startListening() {
             if (isListening) return;
             isListening = true;
@@ -404,7 +514,7 @@
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048; // Higher resolution for better detection
+                analyser.fftSize = 2048;
                 
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 microphone = audioContext.createMediaStreamSource(stream);
@@ -466,7 +576,9 @@
             document.body.style.backgroundColor = "white";
             setTimeout(() => {
                 if (timerActive) {
-                    document.body.style.backgroundColor = currentMode === 'single' ? "var(--success)" : "var(--danger)";
+                    const bgColor = currentMode === 'rate' ? "var(--info)" : 
+                                  currentMode === 'single' ? "var(--success)" : "var(--danger)";
+                    document.body.style.backgroundColor = bgColor;
                 }
             }, 100);
             
@@ -487,16 +599,16 @@
             document.getElementById("delay-value").innerText = startDelay;
         }
 
-        function updateAutoStop() {
-            autoStopDuration = document.getElementById("autoStop").value;
-            document.getElementById("autoStop-value").innerText = autoStopDuration;
+        function updateDuration() {
+            measurementDuration = parseFloat(document.getElementById("duration").value);
+            document.getElementById("duration-value").innerText = measurementDuration;
         }
 
         function playBeep() {
             beepSound.currentTime = 0;
             beepSound.play().then(() => {
                 if (timerActive) {
-                    document.body.style.backgroundColor = "var(--success)";
+                    document.body.style.backgroundColor = currentMode === 'rate' ? "var(--info)" : "var(--success)";
                 }
             });
         }
