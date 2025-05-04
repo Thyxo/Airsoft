@@ -3,620 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Airsoft Shot Timer</title>
+    <title>Airsoft Chronicles | Tactical Blog & Gear Reviews</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #2b5876;
-            --secondary: #4e4376;
-            --accent: #f5af19;
-            --dark: #1a1a2e;
-            --light: #f8f9fa;
-            --success: #4BB543;
-            --danger: #ff4444;
-            --info: #17a2b8;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--dark);
-            color: var(--light);
-            display: flex;
-            min-height: 100vh;
-            overflow-x: hidden;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
         }
         
-        /* Sidebar Styles */
-        .sidebar {
-            width: 280px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            padding: 20px;
-            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
-            border-radius: 0 20px 20px 0;
+        .title-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+        }
+        
+        .gear-card:hover .gear-image {
+            transform: scale(1.05);
             transition: transform 0.3s ease;
-            z-index: 10;
         }
         
-        .sidebar-header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .sidebar-header h2 {
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-        
-        /* Main Content Styles */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .timer-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            width: 100%;
-            max-width: 600px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        h1 {
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(245, 175, 25, 0.3);
-            margin-bottom: 20px;
-            font-size: 2.5rem;
-            text-align: center;
-        }
-        
-        /* Button Styles */
-        button {
-            font-size: 1rem;
-            padding: 12px 25px;
-            margin: 8px;
-            cursor: pointer;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            border-radius: 50px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        
-        button:hover {
+        .nav-link:hover {
+            color: #3b82f6;
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            background: linear-gradient(to right, var(--secondary), var(--primary));
+            transition: all 0.2s ease;
         }
         
-        button:active {
-            transform: translateY(1px);
-        }
-        
-        .control-buttons {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-        
-        /* Mode Selector */
-        .mode-selector {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .mode-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .mode-btn.active {
-            background: var(--accent);
-            color: var(--dark);
-            box-shadow: 0 0 15px rgba(245, 175, 25, 0.5);
-        }
-        
-        /* Status Display */
-        #status {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin: 25px 0;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-            text-align: center;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Shot List */
-        #shot-list {
-            margin-top: 20px;
-            font-size: 1.1rem;
-            list-style-type: none;
-            width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-        }
-        
-        #shot-list li {
-            padding: 10px 15px;
-            margin: 5px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            transition: background 0.2s;
-        }
-        
-        #shot-list li:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Rate of Fire Display */
-        #rate-display {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 15px 0;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            text-align: center;
-            color: var(--accent);
-            text-shadow: 0 0 8px rgba(245, 175, 25, 0.5);
-            display: none;
-        }
-        
-        /* Progress Bar */
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            margin: 15px 0;
-            overflow: hidden;
-            display: none;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(to right, var(--accent), #f12711);
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-        
-        /* Settings Styles */
-        .setting {
-            margin: 20px 0;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-        }
-        
-        .setting p {
-            margin-bottom: 10px;
-            font-weight: 500;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        }
-        
-        input[type="range"] {
-            width: 100%;
-            height: 8px;
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            outline: none;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--accent);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        }
-        
-        .value-display {
-            font-weight: bold;
-            color: var(--accent);
-            text-shadow: 0 0 8px rgba(245, 175, 25, 0.5);
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                border-radius: 0;
-                padding: 15px;
-            }
-            
-            .main-content {
-                padding: 20px;
-            }
-            
-            .control-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .mode-selector {
-                flex-direction: column;
-                align-items: center;
-            }
+        .tactical-pattern {
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2IiBoZWlnaHQ9IjYiPgo8cmVjdCB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMNiA2IiBzdHJva2U9IiNlZGU5ZWIiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8cGF0aCBkPSJNNiAwTDAgNiIgc3Ryb2tlPSIjZWRlOWViIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD4KPC9zdmc+');
+            opacity: 0.1;
         }
     </style>
 </head>
-<body>
-    <!-- Settings Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>Timer Settings</h2>
-        </div>
-        
-        <div class="setting">
-            <p>Sensitivity: <span id="sensitivity-value" class="value-display">50</span></p>
-            <input type="range" id="sensitivity" min="10" max="100" value="50" step="5" oninput="updateSensitivity()">
-        </div>
-
-        <div class="setting">
-            <p>Start Delay: <span id="delay-value" class="value-display">3</span> seconds</p>
-            <input type="range" id="delay" min="1" max="5" value="3" step="1" oninput="updateDelay()">
-        </div>
-
-        <div class="setting">
-            <p>Measurement Duration: <span id="duration-value" class="value-display">3</span> seconds</p>
-            <input type="range" id="duration" min="1" max="5" value="3" step="0.5" oninput="updateDuration()">
-        </div>
-        
-        <div class="mode-selector">
-            <button id="mode-standard" class="mode-btn active" onclick="setMode('standard')">Standard</button>
-            <button id="mode-single" class="mode-btn" onclick="setMode('single')">Single Shot</button>
-            <button id="mode-rate" class="mode-btn" onclick="setMode('rate')">Rate-of-Fire</button>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <h1>Airsoft Shot Timer</h1>
-        
-        <div class="timer-container">
-            <div class="control-buttons">
-                <button onclick="startTimer()">Start Timer</button>
-                <button onclick="stopTimer()">Stop Timer</button>
-                <button onclick="resetTimer()">Reset Timer</button>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-bullse-eye text-blue-400 text-2xl"></i>
+                <a href="#home" class="title-font text-2xl font-bold tracking-tight">Airsoft<span class="text-blue-400">Chronicles</span></a>
             </div>
             
-            <p id="status">Press "Start Timer" to begin</p>
-            
-            <div class="progress-container" id="progress-container">
-                <div class="progress-bar" id="progress-bar"></div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#home" class="nav-link font-medium hover:text-blue-400">Home</a>
+                <a href="#blog" class="nav-link font-medium hover:text-blue-400">Blog</a>
+                <a href="#gear" class="nav-link font-medium hover:text-blue-400">Gear</a>
+                <a href="#events" class="nav-link font-medium hover:text-blue-400">Events</a>
+                <a href="#about" class="nav-link font-medium hover:text-blue-400">About</a>
             </div>
             
-            <div id="rate-display"></div>
-            
-            <ul id="shot-list"></ul>
+            <div class="flex items-center space-x-4">
+                <a href="https://facebook.com/airsoftchronicles" target="_blank" class="text-gray-300 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://instagram.com/airsoftchronicles" target="_blank" class="text-gray-300 hover:text-white"><i class="fab fa-instagram"></i></a>
+                <a href="https://youtube.com/airsoftchronicles" target="_blank" class="text-gray-300 hover:text-white"><i class="fab fa-youtube"></i></a>
+                <button class="md:hidden text-white focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
         </div>
-    </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="home" class="hero-gradient text-white relative overflow-hidden">
+        <div class="tactical-pattern absolute inset-0"></div>
+        <div class="container mx-auto px-4 py-24 relative z-10">
+            <div class="max-w-2xl">
+                <h1 class="title-font text-4xl md:text-6xl font-bold mb-4">Tactical Insights for Airsoft Warriors</h1>
+                <p class="text-xl mb-8 text-blue-100">Gear reviews, field tactics, and adrenaline-pumping action from the airsoft battlefield.</p>
+                <div class="flex space-x-4">
+                    <a href="#blog" class="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 rounded-lg font-bold shadow-lg transition duration-300">Latest Posts</a>
+                    <a href="#community" class="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-6 py-3 rounded-lg font-bold shadow-lg transition duration-300">Join Community</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Featured Posts -->
+    <section id="blog" class="container mx-auto px-4 py-16">
+        <div class="flex justify-between items-center mb-12">
+            <h2 class="title-font text-3xl font-bold text-gray-800">Featured <span class="text-blue-600">Articles</span></h2>
+            <a href="/blog" class="text-blue-600 hover:text-blue-800 font-medium">View All →</a>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Post 1 -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1601584115197-04eaa4216a41?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Airsoft team in action" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center mb-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Tactics</span>
+                        <span class="text-gray-500 text-sm ml-4">May 15, 2023</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">5 Team Strategies for Milsim Events</h3>
+                    <p class="text-gray-600 mb-4">Learn how to coordinate with your squad effectively during large-scale milsim operations with these proven tactics.</p>
+                    <a href="/blog/team-strategies-milsim" class="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">Read More <i class="fas fa-arrow-right ml-2"></i></a>
+                </div>
+            </div>
+            
+            <!-- Post 2 -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1544531585-cc1c7b1e5b9e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Airsoft guns" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center mb-2">
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Gear</span>
+                        <span class="text-gray-500 text-sm ml-4">June 2, 2023</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">2023 Airsoft Rifle Buyer's Guide</h3>
+                    <p class="text-gray-600 mb-4">Our comprehensive breakdown of the best airsoft rifles this year for beginners to advanced players.</p>
+                    <a href="/blog/airsoft-rifle-guide" class="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">Read More <i class="fas fa-arrow-right ml-2"></i></a>
+                </div>
+            </div>
+            
+            <!-- Post 3 -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+                <div class="h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1601584115227-22763632a00d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Airsoft mask" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center mb-2">
+                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Safety</span>
+                        <span class="text-gray-500 text-sm ml-4">June 18, 2023</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Essential Safety Gear for Airsoft</h3>
+                    <p class="text-gray-600 mb-4">Protecting yourself is non-negotiable. Here's our must-have safety equipment checklist for every airsofter.</p>
+                    <a href="/blog/safety-gear-guide" class="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">Read More <i class="fas fa-arrow-right ml-2"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gear Spotlight -->
+    <section id="gear" class="bg-gray-900 text-white py-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="title-font text-3xl font-bold mb-2">Gear <span class="text-blue-400">Spotlight</span></h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Our handpicked selection of top-performing airsoft equipment and accessories</p>
+            </div>
+            
+            <div class="grid md:grid-cols-4 gap-6">
+                <!-- Gear 1 -->
+                <div class="gear-card bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1604537529428-15bcbeecfe4d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80" alt="Tactical vest" class="w-full h-full object-cover gear-image">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1">Condor Modular Plate Carrier</h3>
+                        <p class="text-gray-400 text-sm mb-3">Versatile tactical vest with MOLLE webbing</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-400 font-bold">$129.99</span>
+                            <a href="/gear/condor-plate-carrier" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Details</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gear 2 -->
+                <div class="gear-card bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1584735422186-cbd5a0e0c2c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Airsoft goggles" class="w-full h-full object-cover gear-image">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1">Valken Tango Goggles</h3>
+                        <p class="text-gray-400 text-sm mb-3">ANSI-rated full-seal protective eyewear</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-400 font-bold">$49.95</span>
+                            <a href="/gear/valken-goggles" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Details</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gear 3 -->
+                <div class="gear-card bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://hardballshoppen.dk/wp-content/uploads/2024/08/10-1394-5.jpg" alt="Airsoft rifle" alt="Airsoft rifle" class="w-full h-full object-cover gear-image">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1">Specna Arms E28-ETU</h3>
+                        <p class="text-gray-400 text-sm mb-3">High-performance AEG with full metal construction</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-400 font-bold">$349.99</span>
+                            <a href="/gear/krytac-trident" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Details</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gear 4 -->
+                <div class="gear-card bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://ik.imagekit.io/ztc9bh2wdx/images/2.6470_product_image_perspective.png?tr=n-ux_tn_w750_v00" alt="Airsoft pistol" class="w-full h-full object-cover gear-image">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1">Glock 45 Umarex VFC</h3>
+                        <p class="text-gray-400 text-sm mb-3">Super realistic airsoft pistol</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-400 font-bold">$179.99</span>
+                            <a href="/gear/tokyo-marui-hicapa" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <a href="/gear" class="inline-block border-2 border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white px-6 py-2 rounded-lg font-bold transition duration-300">View All Gear</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Events -->
+    <section id="events" class="container mx-auto px-4 py-16">
+        <h2 class="title-font text-3xl font-bold text-center mb-12 text-gray-800">Upcoming <span class="text-blue-600">Events</span></h2>
+        
+        <div class="max-w-4xl mx-auto">
+            <!-- Event 1 -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8 hover:shadow-xl transition duration-300">
+                <div class="md:flex">
+                    <div class="md:w-1/3 h-48 md:h-auto">
+                        <img src="https://images.unsplash.com/photo-1601584115197-04eaa4216a41?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Milsim event" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 md:w-2/3">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">Milsim</span>
+                            <span class="text-gray-500 text-sm">July 15-16, 2023</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">Operation Black Dawn</h3>
+                        <p class="text-gray-600 mb-4">48-hour continuous milsim event with NATO vs OPFOR objectives. Limited to 200 participants per side.</p>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-gray-700 font-medium"><i class="fas fa-map-marker-alt mr-2 text-blue-500"></i> Fort Ord, CA</span>
+                            </div>
+                            <a href="/events/operation-black-dawn" class="text-blue-600 hover:text-blue-800 font-medium">Register Now →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Event 2 -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8 hover:shadow-xl transition duration-300">
+                <div class="md:flex">
+                    <div class="md:w-1/3 h-48 md:h-auto">
+                        <img src="https://images.unsplash.com/photo-1544531585-cc1c7b1e5b9e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Speedsoft event" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 md:w-2/3">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">SpeedQB</span>
+                            <span class="text-gray-500 text-sm">August 5, 2023</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">West Coast SpeedQB Championship</h3>
+                        <p class="text-gray-600 mb-4">Fast-paced competitive airsoft tournament with cash prizes for top teams. Divisions for all skill levels.</p>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-gray-700 font-medium"><i class="fas fa-map-marker-alt mr-2 text-blue-500"></i> Los Angeles, CA</span>
+                            </div>
+                            <a href="/events/speedqb-championship" class="text-blue-600 hover:text-blue-800 font-medium">Register Now →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Event 3 -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
+                <div class="md:flex">
+                    <div class="md:w-1/3 h-48 md:h-auto">
+                        <img src="https://images.unsplash.com/photo-1601584115227-22763632a00d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Beginner event" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 md:w-2/3">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Beginner</span>
+                            <span class="text-gray-500 text-sm">September 10, 2023</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">New Player Orientation Day</h3>
+                        <p class="text-gray-600 mb-4">Perfect for first-time players. Learn safety, basic tactics, and try different rental guns in a low-pressure environment.</p>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-gray-700 font-medium"><i class="fas fa-map-marker-alt mr-2 text-blue-500"></i> San Diego, CA</span>
+                            </div>
+                            <a href="/events/new-player-day" class="text-blue-600 hover:text-blue-800 font-medium">Register Now →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section id="community" class="bg-blue-600 text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="title-font text-3xl font-bold mb-4">Join Our <span class="text-yellow-300">Tactical</span> Newsletter</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Get exclusive content, gear discounts, and event invites straight to your inbox.</p>
+            
+            <form class="max-w-md mx-auto">
+                <div class="flex">
+                    <input type="email" placeholder="Your email address" class="flex-grow px-4 py-3 rounded-l-lg focus:outline-none text-gray-800">
+                    <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold px-6 py-3 rounded-r-lg transition duration-300">
+                        Subscribe <i class="fas fa-paper-plane ml-2"></i>
+                    </button>
+                </div>
+                <p class="text-blue-200 text-sm mt-2">We respect your privacy. Unsubscribe at any time.</p>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="about" class="bg-gray-900 text-white pt-12 pb-6">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fas fa-bullseye text-blue-400 text-2xl"></i>
+                        <a href="#home" class="title-font text-2xl font-bold tracking-tight">Airsoft<span class="text-blue-400">Chronicles</span></a>
+                    </div>
+                    <p class="text-gray-400">Your ultimate resource for airsoft tactics, gear reviews, and community events since 2015.</p>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="https://facebook.com/airsoftchronicles" target="_blank" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://twitter.com/airsoftchronicles" target="_blank" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="https://instagram.com/airsoftchronicles" target="_blank" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="https://youtube.com/airsoftchronicles" target="_blank" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="title-font text-lg font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#home" class="text-gray-400 hover:text-white">Home</a></li>
+                        <li><a href="#blog" class="text-gray-400 hover:text-white">Blog</a></li>
+                        <li><a href="#gear" class="text-gray-400 hover:text-white">Gear Reviews</a></li>
+                        <li><a href="#events" class="text-gray-400 hover:text-white">Event Calendar</a></li>
+                        <li><a href="#about" class="text-gray-400 hover:text-white">About Us</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="title-font text-lg font-bold mb-4">Categories</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/blog/tactics" class="text-gray-400 hover:text-white">Tactics & Strategy</a></li>
+                        <li><a href="/blog/gear-guides" class="text-gray-400 hover:text-white">Gear Guides</a></li>
+                        <li><a href="/blog/gun-mods" class="text-gray-400 hover:text-white">Gun Modifications</a></li>
+                        <li><a href="/blog/field-reviews" class="text-gray-400 hover:text-white">Field Reviews</a></li>
+                        <li><a href="/blog/interviews" class="text-gray-400 hover:text-white">Player Interviews</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="title-font text-lg font-bold mb-4">Contact</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center"><i class="fas fa-envelope mr-2 text-blue-400"></i> <a href="mailto:contact@airsoftchronicles.com" class="text-gray-400 hover:text-white">contact@airsoftchronicles.com</a></li>
+                        <li class="flex items-center"><i class="fas fa-phone mr-2 text-blue-400"></i> <span class="text-gray-400">(555) 123-4567</span></li>
+                        <li class="flex items-center"><i class="fas fa-map-marker-alt mr-2 text-blue-400"></i> <span class="text-gray-400">123 Tactical Way, San Diego, CA</span></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-6 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm mb-4 md:mb-0">© 2023 Airsoft Chronicles. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="/privacy" class="text-gray-500 hover:text-white text-sm">Privacy Policy</a>
+                    <a href="/terms" class="text-gray-500 hover:text-white text-sm">Terms of Service</a>
+                    <a href="/cookies" class="text-gray-500 hover:text-white text-sm">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        // Audio elements
-        const beepSound = new Audio("https://raw.githubusercontent.com/Thyxo/Airsoft/main/beep-shot-timer.mp3");
-        const buzzerSound = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
-        
-        // Timer variables
-        let audioContext, analyser, microphone, dataArray, startTime, shots = [];
-        let isListening = false;
-        let timerActive = false;
-        let autoStopTimeout;
-        let progressInterval;
-        let measurementDuration = 3;
-        
-        // Settings
-        let sensitivity = 50;
-        let startDelay = 3;
-        let currentMode = 'standard';
-        
-        // Sound detection variables
-        let lastVolume = 0;
-        let volumeHistory = [];
-        const HISTORY_SIZE = 5;
-        let shotLockout = false;
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('mode-standard').classList.toggle('active', mode === 'standard');
-            document.getElementById('mode-single').classList.toggle('active', mode === 'single');
-            document.getElementById('mode-rate').classList.toggle('active', mode === 'rate');
-            document.getElementById('status').innerText = `Mode set to ${getModeName(mode)}`;
-            document.getElementById('rate-display').style.display = 'none';
-        }
-
-        function getModeName(mode) {
-            const names = {
-                'standard': 'Standard',
-                'single': 'Single Shot',
-                'rate': 'Rate-of-Fire'
-            };
-            return names[mode] || mode;
-        }
-
-        function startTimer() {
-            // Reset state
-            document.body.style.backgroundColor = "var(--dark)";
-            document.getElementById('status').innerText = "Get Ready...";
-            document.getElementById('rate-display').style.display = 'none';
-            document.getElementById('rate-display').innerHTML = '';
-            shots = [];
-            document.getElementById("shot-list").innerHTML = "";
-            timerActive = true;
-            shotLockout = false;
+        // Simple mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.querySelector('.md\\:hidden');
+            const navLinks = document.querySelector('.md\\:flex.space-x-8');
             
-            // Clear previous timeouts
-            clearTimeout(autoStopTimeout);
-            clearInterval(progressInterval);
-            
-            // Reset sound detection
-            lastVolume = 0;
-            volumeHistory = [];
-
-            // Random start delay
-            let randomDelay = Math.floor(Math.random() * (startDelay * 1000));
-            
-            setTimeout(() => {
-                const bgColor = currentMode === 'rate' ? "var(--info)" : "var(--danger)";
-                document.body.style.backgroundColor = bgColor;
-                playBeep();
-                
-                let statusText = "";
-                switch(currentMode) {
-                    case 'single':
-                        statusText = "Waiting for first shot...";
-                        break;
-                    case 'rate':
-                        statusText = `Measuring rate-of-fire for ${measurementDuration}s...`;
-                        document.getElementById('progress-container').style.display = 'block';
-                        startProgressBar(measurementDuration);
-                        break;
-                    default:
-                        statusText = "Listening for Shots...";
-                }
-                document.getElementById('status').innerText = statusText;
-                
-                startListening();
-                startTime = performance.now();
-
-                // Set up auto-stop if enabled
-                if (currentMode === 'rate') {
-                    autoStopTimeout = setTimeout(() => {
-                        calculateRateOfFire();
-                    }, measurementDuration * 1000);
-                } else if (currentMode === 'standard') {
-                    // Standard mode can use auto-stop if you want to add it back
-                }
-            }, randomDelay);
-        }
-
-        function startProgressBar(duration) {
-            const progressBar = document.getElementById('progress-bar');
-            progressBar.style.width = '0%';
-            
-            const startTime = Date.now();
-            const endTime = startTime + (duration * 1000);
-            
-            progressInterval = setInterval(() => {
-                const now = Date.now();
-                const elapsed = now - startTime;
-                const progress = Math.min((elapsed / (duration * 1000)) * 100, 100);
-                progressBar.style.width = `${progress}%`;
-                
-                if (now >= endTime) {
-                    clearInterval(progressInterval);
-                }
-            }, 50);
-        }
-
-        function calculateRateOfFire() {
-            if (shots.length < 1) {
-                document.getElementById('rate-display').innerHTML = "No shots detected!";
-                document.getElementById('rate-display').style.display = 'block';
-                stopTimer();
-                return;
-            }
-            
-            // Calculate shots per second
-            const totalTime = measurementDuration;
-            const shotsPerSecond = (shots.length / totalTime).toFixed(2);
-            
-            // Display result
-            document.getElementById('rate-display').innerHTML = `
-                <div>Shots: ${shots.length}</div>
-                <div>Duration: ${measurementDuration}s</div>
-                <div style="font-size: 2rem; margin: 10px 0; color: var(--accent)">
-                    Rate: ${shotsPerSecond} SPS
-                </div>
-                <div>(${(shotsPerSecond * 60).toFixed(1)} RPM)</div>
-            `;
-            document.getElementById('rate-display').style.display = 'block';
-            
-            stopTimer();
-            document.body.style.backgroundColor = "var(--success)";
-            document.getElementById('status').innerText = "Measurement Complete!";
-            document.getElementById('progress-container').style.display = 'none';
-        }
-
-        function stopTimer() {
-            clearTimeout(autoStopTimeout);
-            clearInterval(progressInterval);
-            isListening = false;
-            timerActive = false;
-            document.getElementById('progress-container').style.display = 'none';
-            if (audioContext) {
-                audioContext.close();
-            }
-        }
-
-        function resetTimer() {
-            // Stop any ongoing timer
-            stopTimer();
-            
-            // Reset all displayed values
-            document.getElementById('status').innerText = "Press 'Start Timer' to begin";
-            document.getElementById("shot-list").innerHTML = "";
-            document.getElementById('rate-display').style.display = 'none';
-            document.getElementById('rate-display').innerHTML = '';
-            shots = [];
-            
-            // Reset background color
-            document.body.style.backgroundColor = "var(--dark)";
-            
-            // Reset sound detection
-            lastVolume = 0;
-            volumeHistory = [];
-            shotLockout = false;
-        }
-
-        async function startListening() {
-            if (isListening) return;
-            isListening = true;
-
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
-                
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                microphone = audioContext.createMediaStreamSource(stream);
-                microphone.connect(analyser);
-                
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-                detectShots();
-            } catch (err) {
-                document.getElementById('status').innerText = "Microphone access denied!";
-                document.body.style.backgroundColor = "var(--dark)";
-            }
-        }
-
-        function detectShots() {
-            if (!isListening) return;
-
-            analyser.getByteFrequencyData(dataArray);
-            
-            // Calculate current volume (RMS)
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-                sum += dataArray[i] * dataArray[i];
-            }
-            let rms = Math.sqrt(sum / dataArray.length);
-            
-            // Add to history
-            volumeHistory.push(rms);
-            if (volumeHistory.length > HISTORY_SIZE) {
-                volumeHistory.shift();
-            }
-            
-            // Calculate average of history
-            let avgVolume = volumeHistory.reduce((a, b) => a + b, 0) / volumeHistory.length;
-            
-            // Detect shot (using peak detection)
-            if (!shotLockout && rms > avgVolume * (1 + sensitivity/50) && rms > 20) {
-                registerShot(rms);
-                
-                // In single shot mode, stop after first shot
-                if (currentMode === 'single') {
-                    setTimeout(() => {
-                        stopTimer();
-                        document.body.style.backgroundColor = "var(--success)";
-                        document.getElementById('status').innerText = "Single Shot Detected!";
-                    }, 100);
-                }
-            }
-            
-            lastVolume = rms;
-            requestAnimationFrame(detectShots);
-        }
-
-        function registerShot(volume) {
-            let shotTime = ((performance.now() - startTime) / 1000).toFixed(2);
-            shots.push(shotTime);
-            document.getElementById("shot-list").innerHTML += `<li>Shot ${shots.length}: ${shotTime} seconds (vol: ${volume.toFixed(1)})</li>`;
-            
-            // Flash white briefly when shot is detected
-            document.body.style.backgroundColor = "white";
-            setTimeout(() => {
-                if (timerActive) {
-                    const bgColor = currentMode === 'rate' ? "var(--info)" : 
-                                  currentMode === 'single' ? "var(--success)" : "var(--danger)";
-                    document.body.style.backgroundColor = bgColor;
-                }
-            }, 100);
-            
-            // Short lockout to prevent multiple detections
-            shotLockout = true;
-            setTimeout(() => {
-                shotLockout = false;
-            }, 200);
-        }
-
-        function updateSensitivity() {
-            sensitivity = document.getElementById("sensitivity").value;
-            document.getElementById("sensitivity-value").innerText = sensitivity;
-        }
-
-        function updateDelay() {
-            startDelay = document.getElementById("delay").value;
-            document.getElementById("delay-value").innerText = startDelay;
-        }
-
-        function updateDuration() {
-            measurementDuration = parseFloat(document.getElementById("duration").value);
-            document.getElementById("duration-value").innerText = measurementDuration;
-        }
-
-        function playBeep() {
-            beepSound.currentTime = 0;
-            beepSound.play().then(() => {
-                if (timerActive) {
-                    document.body.style.backgroundColor = currentMode === 'rate' ? "var(--info)" : "var(--success)";
-                }
+            mobileMenuButton.addEventListener('click', function() {
+                navLinks.classList.toggle('hidden');
+                navLinks.classList.toggle('flex');
+                navLinks.classList.toggle('flex-col');
+                navLinks.classList.toggle('absolute');
+                navLinks.classList.toggle('top-16');
+                navLinks.classList.toggle('left-0');
+                navLinks.classList.toggle('right-0');
+                navLinks.classList.toggle('bg-gray-900');
+                navLinks.classList.toggle('p-4');
+                navLinks.classList.toggle('space-y-4');
+                navLinks.classList.toggle('space-x-8');
             });
-        }
-
-        function playBuzzer() {
-            buzzerSound.currentTime = 0;
-            buzzerSound.play();
-        }
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>
